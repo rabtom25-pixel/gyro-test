@@ -1,0 +1,1399 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#10141c">
+
+<title>Test żyroskopu – RC</title>
+
+<style>
+:root {
+  --bg: #10141c;
+  --panel: #1b2230;
+  --panel2: #252e3e;
+  --text: #f1f4f8;
+  --muted: #9aa8ba;
+  --accent: #38a8ff;
+  --green: #35d18a;
+  --red: #ff5c68;
+  --yellow: #ffc857;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 13px 15px;
+  background: var(--panel2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+button:active {
+  filter: brightness(1.25);
+  transform: scale(.98);
+}
+
+button.primary {
+  background: var(--accent);
+  color: #06121e;
+}
+
+button.green {
+  background: #176b4c;
+}
+
+button.red {
+  background: #762c38;
+}
+
+header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+h1 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.status {
+  font-size: 12px;
+  color: var(--yellow);
+  white-space: nowrap;
+}
+
+main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 5px 16px 12px;
+  gap: 8px;
+}
+
+.info {
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pad-wrap {
+  width: min(72vw, 330px, 38vh);
+  aspect-ratio: 1;
+  flex: 0 1 auto;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.pad {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #526176;
+  background:
+    radial-gradient(circle, transparent 0 24%, #364356 24.5% 25%, transparent 25.5%),
+    radial-gradient(circle, transparent 0 49%, #364356 49.5% 50%, transparent 50.5%),
+    linear-gradient(90deg, transparent 49.7%, #526176 50%, transparent 50.3%),
+    linear-gradient(0deg, transparent 49.7%, #526176 50%, transparent 50.3%),
+    #1b2432;
+}
+
+.pad::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8493a7;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #d9efff;
+  box-shadow: 0 0 18px #38a8ff99;
+  transform: translate(-50%, -50%);
+  will-change: left, top;
+  pointer-events: none;
+}
+
+.readouts {
+  width: 100%;
+  max-width: 430px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.readout {
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 9px 5px;
+  text-align: center;
+  min-width: 0;
+}
+
+.readout small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.readout strong {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.buttons {
+  width: 100%;
+  max-width: 430px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.buttons button {
+  min-height: 44px;
+}
+
+.buttons .wide {
+  grid-column: span 2;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.4;
+  max-width: 400px;
+}
+
+footer {
+  flex: 0 0 auto;
+  text-align: center;
+  color: #738196;
+  font-size: 10px;
+  padding: 5px 10px;
+}
+
+/* =====================================
+   ORIENTACJA POZIOMA
+   ===================================== */
+
+@media (orientation: landscape) and (max-height: 600px) {
+
+  header {
+    padding: 5px 14px;
+    min-height: 32px;
+  }
+
+  h1 {
+    font-size: 15px;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.85fr) minmax(250px, 1.15fr);
+    grid-template-rows: 1fr;
+    align-items: center;
+    justify-items: stretch;
+    gap: 12px;
+    padding: 4px 14px;
+  }
+
+  .info {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    font-size: 11px;
+    padding: 2px 4px;
+  }
+
+  .pad-wrap {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    justify-self: center;
+    width: min(52vh, 40vw, 310px);
+    max-width: 100%;
+    margin-top: 10px;
+  }
+
+  .dot {
+    width: 26px;
+    height: 26px;
+  }
+
+  .readouts {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    margin-top: 5px;
+    gap: 6px;
+  }
+
+  .readout {
+    padding: 7px 3px;
+  }
+
+  .readout strong {
+    font-size: 15px;
+  }
+
+  .buttons {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    margin-top: 70px;
+    gap: 6px;
+  }
+
+  .buttons button {
+    min-height: 38px;
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .hint {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  footer {
+    display: none;
+  }
+}
+
+/* Bardzo niski ekran poziomy */
+
+@media (orientation: landscape) and (max-height: 420px) {
+
+  header {
+    min-height: 26px;
+    padding: 2px 12px;
+  }
+
+  main {
+    gap: 5px;
+    padding: 2px 10px;
+  }
+
+  .pad-wrap {
+    width: min(48vh, 36vw, 230px);
+    margin-top: 5px;
+  }
+
+  .readouts {
+    margin-top: 0;
+  }
+
+  .buttons {
+    margin-top: 62px;
+  }
+
+  .buttons button {
+    min-height: 33px;
+    padding: 5px;
+    font-size: 11px;
+  }
+
+  .hint {
+    display: none;
+  }
+}
+
+/* =====================================
+   OKNO LOGÓW
+   ===================================== */
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #000b;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 600px;
+  height: min(85vh, 700px);
+  height: min(85dvh, 700px);
+  background: var(--panel);
+  border: 1px solid #3b485c;
+  border-radius: 17px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-head {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #3b485c;
+}
+
+.modal-head strong {
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.modal-actions button {
+  padding: 8px 9px;
+  font-size: 11px;
+}
+
+#log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #b9d6ed;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.modal-foot {
+  padding: 8px;
+  border-top: 1px solid #3b485c;
+  display: flex;
+  gap: 7px;
+}
+
+.modal-foot button {
+  flex: 1;
+  padding: 10px 5px;
+  font-size: 11px;
+}
+
+.log-info {
+  color: var(--green);
+}
+
+.log-sample {
+  color: #b9d6ed;
+}
+
+@media (orientation: landscape) {
+  .modal-box {
+    max-width: 800px;
+    height: 88dvh;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Test czujników telefonu</h1>
+  <div class="status" id="status">Nieaktywny</div>
+</header>
+
+<main>
+
+  <div class="info">
+    <span>Wychylenie telefonu</span>
+    <span id="sampleRate">0 próbek/s</span>
+  </div>
+
+  <div class="pad-wrap">
+    <div class="pad" id="pad">
+      <div class="dot" id="dot"></div>
+    </div>
+  </div>
+
+  <div class="readouts">
+    <div class="readout">
+      <small>Oś X</small>
+      <strong id="outX">0.0°</strong>
+    </div>
+    <div class="readout">
+      <small>Oś Y</small>
+      <strong id="outY">0.0°</strong>
+    </div>
+    <div class="readout">
+      <small>Próbki</small>
+      <strong id="outCount">0</strong>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button class="primary wide" id="startBtn">WŁĄCZ CZUJNIKI</button>
+    <button class="green" id="zeroBtn">ZERUJ POZYCJĘ</button>
+    <button id="pauseBtn">PAUZA</button>
+    <button id="logBtn" class="wide">OTWÓRZ LOGI</button>
+  </div>
+
+  <div class="hint">
+    Trzymaj telefon w pozycji neutralnej i naciśnij „Zeruj pozycję”.
+    Następnie powoli przechylaj go w lewo, prawo, przód i tył.
+  </div>
+
+</main>
+
+<footer>
+  Odczyt przyspieszenia z uwzględnieniem grawitacji – DeviceMotion
+</footer>
+
+<!-- OKNO LOGÓW -->
+
+<div class="modal" id="logModal">
+  <div class="modal-box">
+
+    <div class="modal-head">
+      <strong>Logi czujników</strong>
+      <div class="modal-actions">
+        <button id="clearLogBtn">Wyczyść</button>
+        <button id="closeLogBtn">Zamknij</button>
+      </div>
+    </div>
+
+    <div id="log"></div>
+
+    <div class="modal-foot">
+      <button id="copyLogBtn" class="primary">KOPIUJ TEKST</button>
+      <button id="csvBtn">EKSPORT CSV</button>
+      <button id="closeLogBtn2">ZAMKNIJ</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// ========================================
+// USTAWIENIA
+// ========================================
+
+const MAX_ANGLE = 35;
+const FILTER = 0.18;
+
+const MAX_LOG_LINES = 1000;
+const MAX_HISTORY = 20000;
+
+const SAMPLE_HISTORY_INTERVAL = 50;
+const VISIBLE_LOG_INTERVAL = 100;
+
+// ========================================
+// ELEMENTY EKRANU
+// ========================================
+
+const dot = document.getElementById("dot");
+const pad = document.getElementById("pad");
+const statusEl = document.getElementById("status");
+
+const outX = document.getElementById("outX");
+const outY = document.getElementById("outY");
+const outCount = document.getElementById("outCount");
+const sampleRate = document.getElementById("sampleRate");
+
+const logWindow = document.getElementById("log");
+const logModal = document.getElementById("logModal");
+
+// ========================================
+// STAN PROGRAMU
+// ========================================
+
+let active = false;
+let paused = false;
+
+let sampleCount = 0;
+let lastRateTime = 0;
+let rateCount = 0;
+
+let gravityFiltered = null;
+let gravityReference = null;
+
+let axisX = null;
+let axisY = null;
+
+let angleX = 0;
+let angleY = 0;
+
+let currentDotX = 0;
+let currentDotY = 0;
+
+let lastLogTime = 0;
+let lastHistoryTime = 0;
+
+const history = [];
+const visibleLogLines = [];
+
+// ========================================
+// CZAS
+// ========================================
+
+function getTime() {
+  return new Date().toLocaleTimeString("pl-PL", {
+    hour12: false,
+    fractionalSecondDigits: 3
+  });
+}
+
+function getISOTime() {
+  return new Date().toISOString();
+}
+
+// ========================================
+// POMOCNICZE WEKTORY
+// ========================================
+
+function dotProduct(a, b) {
+  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+function crossProduct(a, b) {
+  return [
+    a[1]*b[2] - a[2]*b[1],
+    a[2]*b[0] - a[0]*b[2],
+    a[0]*b[1] - a[1]*b[0]
+  ];
+}
+
+function normalize(v) {
+  const length = Math.sqrt(dotProduct(v, v));
+
+  if (!length || !Number.isFinite(length)) return null;
+
+  return [
+    v[0] / length,
+    v[1] / length,
+    v[2] / length
+  ];
+}
+
+function subtractProjection(v, base) {
+  const projection = dotProduct(v, base);
+
+  return [
+    v[0] - projection * base[0],
+    v[1] - projection * base[1],
+    v[2] - projection * base[2]
+  ];
+}
+
+// ========================================
+// HISTORIA I LOGI TEKSTOWE
+// ========================================
+
+function addLog(message) {
+
+  const time = getTime();
+
+  const line = "[" + time + "] [INFO] " + message;
+
+  const entry = {
+    type: "INFO",
+    time: getISOTime(),
+    message: message,
+    x: angleX,
+    y: angleY
+  };
+
+  history.push(entry);
+
+  if (history.length > MAX_HISTORY) {
+    history.shift();
+  }
+
+  addVisibleLine(line, "log-info");
+}
+
+function addVisibleLine(line, className) {
+
+  visibleLogLines.push(line);
+
+  if (visibleLogLines.length > MAX_LOG_LINES) {
+    visibleLogLines.shift();
+  }
+
+  const entry = document.createElement("div");
+
+  entry.className = className || "";
+  entry.textContent = line;
+
+  logWindow.appendChild(entry);
+
+  while (logWindow.children.length > MAX_LOG_LINES) {
+    logWindow.removeChild(logWindow.firstChild);
+  }
+
+  logWindow.scrollTop = logWindow.scrollHeight;
+}
+
+// ========================================
+// LOGOWANIE PRÓBEK
+// ========================================
+
+function logSample(raw) {
+
+  const time = getTime();
+
+  const line =
+    "[" + time + "] " +
+    "#" + sampleCount +
+    " GX:" + raw[0].toFixed(2) +
+    " GY:" + raw[1].toFixed(2) +
+    " GZ:" + raw[2].toFixed(2) +
+    " | X:" + angleX.toFixed(2) + "°" +
+    " Y:" + angleY.toFixed(2) + "°";
+
+  addVisibleLine(line, "log-sample");
+}
+
+// ========================================
+// OKNO LOGÓW
+// ========================================
+
+function openLogs() {
+  logModal.classList.add("open");
+}
+
+function closeLogs() {
+  logModal.classList.remove("open");
+}
+
+// ========================================
+// CENTROWANIE KROPKI
+// ========================================
+
+function renderDot(x, y) {
+
+  const rect = pad.getBoundingClientRect();
+
+  if (!rect.width || !rect.height) return;
+
+  const radius = Math.min(rect.width, rect.height) / 2 - 20;
+
+  const px = Math.max(-1, Math.min(1, x / MAX_ANGLE));
+  const py = Math.max(-1, Math.min(1, y / MAX_ANGLE));
+
+  const distance = Math.sqrt(px*px + py*py);
+
+  let scale = 1;
+
+  if (distance > 1) {
+    scale = 1 / distance;
+  }
+
+  const finalX = px * scale;
+  const finalY = py * scale;
+
+  currentDotX = finalX;
+  currentDotY = finalY;
+
+  dot.style.left =
+    (50 + finalX * radius / rect.width * 100) + "%";
+
+  dot.style.top =
+    (50 - finalY * radius / rect.height * 100) + "%";
+}
+
+function centerDot() {
+
+  angleX = 0;
+  angleY = 0;
+
+  outX.textContent = "0.0°";
+  outY.textContent = "0.0°";
+
+  renderDot(0, 0);
+}
+
+// ========================================
+// USTAWIENIE PUNKTU ODNIESIENIA
+// ========================================
+
+function setReference(vector) {
+
+  const normalized = normalize(vector);
+
+  if (!normalized) {
+    addLog("Nie można wyzerować – brak poprawnego odczytu");
+    return;
+  }
+
+  gravityReference = normalized;
+
+  let candidate = [1, 0, 0];
+
+  let projected = subtractProjection(
+    candidate,
+    gravityReference
+  );
+
+  if (
+    Math.sqrt(dotProduct(projected, projected)) < 0.15
+  ) {
+    candidate = [0, 1, 0];
+
+    projected = subtractProjection(
+      candidate,
+      gravityReference
+    );
+  }
+
+  axisX = normalize(projected);
+
+  if (!axisX) {
+    addLog("Błąd wyznaczania osi X");
+    return;
+  }
+
+  axisY = normalize(
+    crossProduct(gravityReference, axisX)
+  );
+
+  if (!axisY) {
+    addLog("Błąd wyznaczania osi Y");
+    return;
+  }
+
+  centerDot();
+
+  addLog("Ustawiono nową pozycję neutralną");
+}
+
+// ========================================
+// OBLICZANIE WYCHYLENIA
+// ========================================
+
+function calculateTilt(vector) {
+
+  if (!gravityReference || !axisX || !axisY) {
+    setReference(vector);
+    return;
+  }
+
+  const normalized = normalize(vector);
+
+  if (!normalized) return;
+
+  const forward = dotProduct(
+    normalized,
+    gravityReference
+  );
+
+  const x = dotProduct(normalized, axisX);
+  const y = dotProduct(normalized, axisY);
+
+  angleX = Math.atan2(x, forward) * 180 / Math.PI;
+  angleY = Math.atan2(y, forward) * 180 / Math.PI;
+
+  if (
+    !Number.isFinite(angleX) ||
+    !Number.isFinite(angleY)
+  ) {
+    return;
+  }
+
+  outX.textContent = angleX.toFixed(1) + "°";
+  outY.textContent = angleY.toFixed(1) + "°";
+
+  renderDot(angleX, angleY);
+}
+
+// ========================================
+// ODCZYT CZUJNIKA
+// ========================================
+
+function handleMotion(event) {
+
+  if (!active || paused) return;
+
+  const acceleration =
+    event.accelerationIncludingGravity;
+
+  if (
+    !acceleration ||
+    acceleration.x === null ||
+    acceleration.y === null ||
+    acceleration.z === null
+  ) {
+    return;
+  }
+
+  const raw = [
+    acceleration.x,
+    acceleration.y,
+    acceleration.z
+  ];
+
+  if (!raw.every(Number.isFinite)) return;
+
+  const magnitude = Math.sqrt(
+    dotProduct(raw, raw)
+  );
+
+  if (magnitude < 3 || magnitude > 25) return;
+
+  // FILTR
+
+  if (!gravityFiltered) {
+
+    gravityFiltered = raw.slice();
+
+  } else {
+
+    gravityFiltered = [
+      gravityFiltered[0] +
+        FILTER * (raw[0] - gravityFiltered[0]),
+
+      gravityFiltered[1] +
+        FILTER * (raw[1] - gravityFiltered[1]),
+
+      gravityFiltered[2] +
+        FILTER * (raw[2] - gravityFiltered[2])
+    ];
+  }
+
+  sampleCount++;
+  rateCount++;
+
+  outCount.textContent = sampleCount;
+
+  calculateTilt(gravityFiltered);
+
+  const now = performance.now();
+
+  // CZĘSTOTLIWOŚĆ
+
+  if (now - lastRateTime >= 1000) {
+
+    sampleRate.textContent =
+      rateCount + " próbek/s";
+
+    rateCount = 0;
+    lastRateTime = now;
+  }
+
+  // HISTORIA PEŁNA – CO 50 MS
+
+  if (now - lastHistoryTime >= SAMPLE_HISTORY_INTERVAL) {
+
+    history.push({
+      type: "SAMPLE",
+      time: getISOTime(),
+      gx: raw[0],
+      gy: raw[1],
+      gz: raw[2],
+      x: angleX,
+      y: angleY
+    });
+
+    if (history.length > MAX_HISTORY) {
+      history.shift();
+    }
+
+    lastHistoryTime = now;
+  }
+
+  // LOGI WIDOCZNE – CO 100 MS
+
+  if (now - lastLogTime >= VISIBLE_LOG_INTERVAL) {
+
+    logSample(raw);
+
+    lastLogTime = now;
+  }
+}
+
+// ========================================
+// URUCHAMIANIE CZUJNIKÓW
+// ========================================
+
+async function startSensors() {
+
+  if (!("DeviceMotionEvent" in window)) {
+
+    statusEl.textContent = "Brak czujnika";
+
+    addLog("DeviceMotionEvent nie jest dostępny");
+
+    return;
+  }
+
+  try {
+
+    if (
+      typeof DeviceMotionEvent.requestPermission === "function"
+    ) {
+
+      const permission =
+        await DeviceMotionEvent.requestPermission();
+
+      if (permission !== "granted") {
+
+        statusEl.textContent = "Brak zgody";
+
+        addLog("Brak zgody na dostęp do czujników");
+
+        return;
+      }
+    }
+
+    window.removeEventListener(
+      "devicemotion",
+      handleMotion
+    );
+
+    gravityFiltered = null;
+    gravityReference = null;
+    axisX = null;
+    axisY = null;
+
+    sampleCount = 0;
+    rateCount = 0;
+
+    lastRateTime = performance.now();
+    lastLogTime = 0;
+    lastHistoryTime = 0;
+
+    centerDot();
+
+    active = true;
+    paused = false;
+
+    window.addEventListener(
+      "devicemotion",
+      handleMotion,
+      { passive: true }
+    );
+
+    statusEl.textContent = "Aktywny";
+
+    document.getElementById("startBtn").textContent =
+      "CZUJNIKI WŁĄCZONE";
+
+    document.getElementById("pauseBtn").textContent =
+      "PAUZA";
+
+    addLog("Uruchomiono DeviceMotion");
+
+  } catch (error) {
+
+    statusEl.textContent = "Błąd";
+
+    addLog(
+      "Błąd uruchamiania: " + error.message
+    );
+  }
+}
+
+// ========================================
+// PAUZA / WZNOWIENIE
+// ========================================
+
+function togglePause() {
+
+  if (!active) {
+
+    addLog("Najpierw uruchom czujniki");
+
+    return;
+  }
+
+  paused = !paused;
+
+  if (paused) {
+
+    statusEl.textContent = "Pauza";
+
+    document.getElementById("pauseBtn").textContent =
+      "WZNÓW";
+
+    addLog("Wstrzymano odczyt");
+
+  } else {
+
+    gravityFiltered = null;
+
+    statusEl.textContent = "Aktywny";
+
+    document.getElementById("pauseBtn").textContent =
+      "PAUZA";
+
+    addLog(
+      "Wznowiono odczyt – ponowna inicjalizacja filtra"
+    );
+  }
+}
+
+// ========================================
+// ZEROWANIE
+// ========================================
+
+function zeroPosition() {
+
+  if (!active || paused) {
+
+    addLog(
+      "Nie można wyzerować – czujniki są nieaktywne lub w pauzie"
+    );
+
+    return;
+  }
+
+  if (!gravityFiltered) {
+
+    addLog(
+      "Oczekiwanie na pierwszą próbkę czujnika"
+    );
+
+    return;
+  }
+
+  setReference(gravityFiltered);
+}
+
+// ========================================
+// KOPIOWANIE LOGÓW DO SCHOWKA
+// ========================================
+
+function buildTextLog() {
+
+  return history.map(item => {
+
+    const time = item.time || "";
+
+    if (item.type === "SAMPLE") {
+
+      return (
+        "[" + time + "] " +
+        "GX:" + Number(item.gx).toFixed(3) +
+        " GY:" + Number(item.gy).toFixed(3) +
+        " GZ:" + Number(item.gz).toFixed(3) +
+        " | X:" + Number(item.x).toFixed(2) + "°" +
+        " Y:" + Number(item.y).toFixed(2) + "°"
+      );
+    }
+
+    return (
+      "[" + time + "] [INFO] " +
+      item.message
+    );
+
+  }).join("\n");
+}
+
+async function copyLogs() {
+
+  const text = buildTextLog();
+
+  if (!text) {
+
+    addLog("Brak danych do skopiowania");
+
+    return;
+  }
+
+  try {
+
+    if (
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+
+      await navigator.clipboard.writeText(text);
+
+    } else {
+
+      const textarea = document.createElement("textarea");
+
+      textarea.value = text;
+
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "0";
+
+      document.body.appendChild(textarea);
+
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      const successful =
+        document.execCommand("copy");
+
+      textarea.remove();
+
+      if (!successful) {
+        throw new Error("Nie udało się skopiować");
+      }
+    }
+
+    addLog("Skopiowano historię do schowka");
+
+  } catch (error) {
+
+    addLog(
+      "Błąd kopiowania: " + error.message
+    );
+  }
+}
+
+// ========================================
+// EKSPORT CSV
+// ========================================
+
+function exportCSV() {
+
+  const rows = [
+    [
+      "czas",
+      "typ",
+      "gravity_x",
+      "gravity_y",
+      "gravity_z",
+      "kat_x",
+      "kat_y"
+    ]
+  ];
+
+  history.forEach(item => {
+
+    rows.push([
+      item.time || "",
+      item.type || "",
+      item.gx ?? "",
+      item.gy ?? "",
+      item.gz ?? "",
+      item.x ?? "",
+      item.y ?? ""
+    ]);
+  });
+
+  const csv = rows.map(row =>
+
+    row.map(value =>
+      '"' + String(value).replaceAll('"', '""') + '"'
+    ).join(";")
+
+  ).join("\n");
+
+  const blob = new Blob(
+    ["\uFEFF" + csv],
+    { type: "text/csv;charset=utf-8" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "test_czujnikow_telefonu.csv";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 2000);
+
+  addLog("Wyeksportowano dane CSV");
+}
+
+// ========================================
+// CZYSZCZENIE HISTORII
+// ========================================
+
+function clearLogs() {
+
+  history.length = 0;
+  visibleLogLines.length = 0;
+
+  logWindow.innerHTML = "";
+
+  addLog("Wyczyszczono historię logów");
+}
+
+// ========================================
+// OBSŁUGA PRZYCISKÓW
+// ========================================
+
+document.getElementById("startBtn")
+  .addEventListener("click", startSensors);
+
+document.getElementById("zeroBtn")
+  .addEventListener("click", zeroPosition);
+
+document.getElementById("pauseBtn")
+  .addEventListener("click", togglePause);
+
+document.getElementById("logBtn")
+  .addEventListener("click", openLogs);
+
+document.getElementById("closeLogBtn")
+  .addEventListener("click", closeLogs);
+
+document.getElementById("closeLogBtn2")
+  .addEventListener("click", closeLogs);
+
+document.getElementById("clearLogBtn")
+  .addEventListener("click", clearLogs);
+
+document.getElementById("copyLogBtn")
+  .addEventListener("click", copyLogs);
+
+document.getElementById("csvBtn")
+  .addEventListener("click", exportCSV);
+
+logModal.addEventListener("click", event => {
+
+  if (event.target === logModal) {
+    closeLogs();
+  }
+});
+
+// ========================================
+// ZABLOKOWANIE PRZEWIJANIA STRONY
+// ========================================
+
+document.addEventListener("touchmove", event => {
+
+  if (!event.target.closest("#log")) {
+    event.preventDefault();
+  }
+
+}, { passive: false });
+
+document.addEventListener("gesturestart", event => {
+
+  event.preventDefault();
+
+}, { passive: false });
+
+document.addEventListener("dblclick", event => {
+
+  event.preventDefault();
+
+}, { passive: false });
+
+// ========================================
+// OBSŁUGA ZMIANY ORIENTACJI
+// ========================================
+
+function updateLayout() {
+
+  requestAnimationFrame(() => {
+
+    if (!gravityReference) {
+
+      renderDot(0, 0);
+
+    } else {
+
+      renderDot(angleX, angleY);
+    }
+  });
+}
+
+window.addEventListener("resize", updateLayout);
+
+window.addEventListener("orientationchange", () => {
+  setTimeout(updateLayout, 150);
+});
+
+// ========================================
+// START WIDOKU
+// ========================================
+
+centerDot();
+
+addLog("Program gotowy – kropka ustawiona centralnie");
+
+</script>
+
+</body>
+</html>
